@@ -23,6 +23,9 @@ with open("index.m3u8") as index:
             count += 1
         if "https" in line:
             qualities.append(line.strip())
+        elif "EXT" not in line and line != '\n':
+            qualities.append(f"{url[:url.rfind('/')]}/{line}")
+
 choice = int(input("Enter choice: ")) - 1
 
 # Downloading video M3U8
