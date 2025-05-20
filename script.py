@@ -3,54 +3,54 @@ import urllib.request
 import concurrent.futures
 import subprocess
 
-url = input("Enter url: ")
-os.makedirs("ts", exist_ok=True)
-headers = {
-    "Referer": "https://turtleviplay.xyz/"
-}
+def downloadFile(file_url, file_name):
+    req = urllib.request.Request(file_url, headers={"Referer": "https://turtleviplay.xyz/"})
+    with urllib.request.urlopen(req) as response:
+        with open(file_name, "wb") as file:
+            file.write(response.read())
 
+os.makedirs("ts", exist_ok=True)
+
+count = 1
 ts_links = []
 qualities = []
 
+url = input("Enter url: ")
+
+# Save main url
+main_url = url[:url.rfind("/") + 1]
+
 # Downloading index
-urllib.request.urlretrieve(url, "index.m3u8")
-count = 1
+downloadFile(url, "index.m3u8")
 with open("index.m3u8") as index:
     for line in index.readlines():
-        if "BANDWIDTH" in line:
-            leftSub = line[line.index("RESOLUTION=") + 11:]
-            print(f"{count}. {leftSub[:leftSub.index(",")]}")
+        if "RESOLUTION" in line:
+            quality = line[line.find("RESOLUTION=") + 11:line.find("RESOLUTION=") + 11 + line[line.find("RESOLUTION=") + 11:].find(",")]
+            print(f"{count}. {quality}")
             count += 1
         if "https" in line:
             qualities.append(line.strip())
-        elif "EXT" not in line and line != '\n':
-            qualities.append(f"{url[:url.rfind('/')]}/{line}")
+        if "EXT" not in line:
+            qualities.append(f"{main_url}{line.strip()}")
 
 choice = int(input("Enter choice: ")) - 1
 
-# Downloading video M3U8
-req = urllib.request.Request(qualities[choice],headers=headers)
-with urllib.request.urlopen(req) as response:
-    content = response.read()
-    with open("video.m3u8", "wb") as video:
-        video.write(content)
+# Update main url - Playlist may contain different servers
+main_url = qualities[choice][:qualities[choice].rfind("/") + 1]
 
-# Read and download ts files
-main_url = qualities[choice][:qualities[choice].rfind('/')]
-with open("video.m3u8") as video:
-    for line in video.readlines():
-        if "EXT" not in line:
-            ts_links.append(f"{main_url}/{line.strip()}")
+# Downloading playlist
+downloadFile(qualities[choice], "playlist.m3u8")
+with open("playlist.m3u8") as playlist:
+    for line in playlist.readlines():
+        if "EXT" not in line and "https" not in line:
+            ts_links.append(f"{main_url}{line.strip()}")
+        elif "https" in line:
+            ts_links.append(f"{line.strip()}")
 
-def download_file(ts_url, num):
-    urllib.request.urlretrieve(ts_url, f"ts/{num}.ts")
-    print(f"{num}.ts downloaded of {len(ts_links)} files...")
+fileNames = [f"ts/{i}.ts" for i in range(len(ts_links))]
 
-threads = 20
-
-with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-    executor.map(download_file, ts_links, range(1, len(ts_links) + 1))
-
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    executor.map(downloadFile, ts_links, fileNames)
 
 # Append downloaded ts to single file
 with open("out.ts", 'wb') as output:
