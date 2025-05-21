@@ -1,22 +1,27 @@
 import os
+import shutil
 import urllib.request
 import concurrent.futures
 import subprocess
+
+count = 1
+ts_links = []
+qualities = []
 
 def downloadFile(file_url, file_name):
     req = urllib.request.Request(file_url, headers={"Referer": "https://turtleviplay.xyz/"})
     with urllib.request.urlopen(req) as response:
         with open(file_name, "wb") as file:
             file.write(response.read())
-    print(f"Downloaded {file_name}!")
+    if len(ts_links) != 0:
+        print(f"Downloaded {file_name[:file_name.find('.')]}/{len(ts_links)}")
+    else:
+        print(f"Downloaded {file_name}!")
 
 os.makedirs("ts", exist_ok=True)
 
-count = 1
-ts_links = []
-qualities = []
-
 url = input("Enter url: ")
+name = input("Enter file name: ")
 
 # Save main url
 main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
@@ -68,6 +73,11 @@ ffmpeg_command = [
     "-i", "out.ts",
     "-c:v", "copy",
     "-c:a", "copy",
-    "output.mp4"
+    f"{name}.mp4"
 ]
 subprocess.run(ffmpeg_command)
+
+# Clean up
+shutil.rmtree("ts")
+os.remove("out.ts")
+os.remove("index.m3u8")
