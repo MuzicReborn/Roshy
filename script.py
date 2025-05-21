@@ -8,6 +8,7 @@ def downloadFile(file_url, file_name):
     with urllib.request.urlopen(req) as response:
         with open(file_name, "wb") as file:
             file.write(response.read())
+    print(f"Downloaded {file_name}!")
 
 os.makedirs("ts", exist_ok=True)
 
@@ -18,7 +19,7 @@ qualities = []
 url = input("Enter url: ")
 
 # Save main url
-main_url = url[:url.rfind("/") + 1]
+main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
 
 # Downloading index
 downloadFile(url, "index.m3u8")
@@ -34,13 +35,12 @@ with open("index.m3u8") as index:
             qualities.append(f"{main_url}{line.strip()}")
 
 choice = int(input("Enter choice: ")) - 1
+url = qualities[choice]
+main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
+downloadFile(qualities[choice], "index.m3u8")
+qualities.clear()
 
-# Update main url - Playlist may contain different servers
-main_url = qualities[choice][:qualities[choice].rfind("/") + 1]
-
-# Downloading playlist
-downloadFile(qualities[choice], "playlist.m3u8")
-with open("playlist.m3u8") as playlist:
+with open("index.m3u8") as playlist:
     for line in playlist.readlines():
         if "EXT" not in line and "https" not in line:
             ts_links.append(f"{main_url}{line.strip()}")
@@ -49,7 +49,8 @@ with open("playlist.m3u8") as playlist:
 
 fileNames = [f"ts/{i}.ts" for i in range(len(ts_links))]
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+print(f"Downloading {len(ts_links)} files...")
+with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
     executor.map(downloadFile, ts_links, fileNames)
 
 # Append downloaded ts to single file
