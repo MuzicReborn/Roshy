@@ -8,11 +8,11 @@ count = 1
 ts_links = []
 qualities = []
 
-def downloadFile(file_url, file_name):
+def download_file(file_url, file_name):
     req = urllib.request.Request(file_url, headers={"Referer": "https://turtleviplay.xyz/"})
     with urllib.request.urlopen(req) as response:
-        with open(file_name, "wb") as file:
-            file.write(response.read())
+        with open(file_name, "wb") as f:
+            f.write(response.read())
     if len(ts_links) != 0:
         print(f"Downloaded {file_name[:file_name.find('.')]}/{len(ts_links)}")
     else:
@@ -27,7 +27,7 @@ name = input("Enter file name: ")
 main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
 
 # Downloading index
-downloadFile(url, "index.m3u8")
+download_file(url, "index.m3u8")
 with open("index.m3u8") as index:
     for line in index.readlines():
         if "RESOLUTION" in line:
@@ -42,7 +42,7 @@ with open("index.m3u8") as index:
 choice = int(input("Enter choice: ")) - 1
 url = qualities[choice]
 main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
-downloadFile(qualities[choice], "index.m3u8")
+download_file(qualities[choice], "index.m3u8")
 qualities.clear()
 
 with open("index.m3u8") as playlist:
@@ -56,7 +56,7 @@ fileNames = [f"ts/{i}.ts" for i in range(len(ts_links))]
 
 print(f"Downloading {len(ts_links)} files...")
 with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
-    executor.map(downloadFile, ts_links, fileNames)
+    executor.map(download_file, ts_links, fileNames)
 
 # Append downloaded ts to single file
 with open("out.ts", 'wb') as output:
