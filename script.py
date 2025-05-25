@@ -24,28 +24,31 @@ os.makedirs(downloads_folder + "ts", exist_ok=True)
 
 url = input("Enter url: ")
 name = input("Enter file name: ")
+choice = input("Playlist download (t/f): ")
 
 # Save main url
 main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
 
 # Downloading index
 download_file(url, "index.m3u8")
-with open(f"{downloads_folder}index.m3u8") as index:
-    for line in index.readlines():
-        if "RESOLUTION" in line:
-            quality = line[line.find("RESOLUTION=") + 11:line.find("RESOLUTION=") + 11 + line[line.find("RESOLUTION=") + 11:].find(",")]
-            print(f"{count}. {quality}")
-            count += 1
-        if "https" in line:
-            qualities.append(line.strip())
-        if "EXT" not in line:
-            qualities.append(f"{main_url}{line.strip()}")
+if choice != "t":
+    with open(f"{downloads_folder}index.m3u8") as index:
+        for line in index.readlines():
+            if "RESOLUTION" in line:
+                quality = line[line.find("RESOLUTION=") + 11:line.find("RESOLUTION=") + 11 + line[line.find(
+                    "RESOLUTION=") + 11:].find(",")]
+                print(f"{count}. {quality}")
+                count += 1
+            if "https" in line:
+                qualities.append(line.strip())
+            if "EXT" not in line:
+                qualities.append(f"{main_url}{line.strip()}")
 
-choice = int(input("Enter choice: ")) - 1
-url = qualities[choice]
-main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
-download_file(qualities[choice], "index.m3u8")
-qualities.clear()
+    choice = int(input("Enter choice: ")) - 1
+    url = qualities[choice]
+    main_url = url[:url.rfind("m3u8")][:url[:url.rfind("m3u8")].rfind("/") + 1]
+    download_file(qualities[choice], "index.m3u8")
+    qualities.clear()
 
 with open(f"{downloads_folder}index.m3u8") as playlist:
     for line in playlist.readlines():
